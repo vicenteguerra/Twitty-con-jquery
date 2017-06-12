@@ -1,29 +1,65 @@
 (function () {
+  // Initialize Firebase
+  var config = {
+    apiKey: "AIzaSyDMmmthJut_zP64tfOvDRQ2I4FPvWO-KWk",
+    authDomain: "twitty-38fd9.firebaseapp.com",
+    databaseURL: "https://twitty-38fd9.firebaseio.com",
+    projectId: "twitty-38fd9",
+    storageBucket: "twitty-38fd9.appspot.com",
+    messagingSenderId: "189990017823"
+  };
+  firebase.initializeApp(config);
+  var twit = firebase.database().ref('twit/');
+
   var contador = 0;
   var letras = 140;
 
   var cargarPagina = function () {
     // Envío de Tweet
-    $("#mensajes").submit(agregarTweet);
+    $("#mensajes").submit(saveTweet);
     $("#tweet").keyup(validarContenido);
     $("#tweet").keyup(contarLetras);
   };
 
-  var agregarTweet = function (e) {
+  twit.on('value', function(snapshot) {
+    $("#timeline").empty();
+    snapshot.forEach(function (snapshot) {
+       var obj = snapshot.val();
+       agregarTweet(obj)
+   });
+  });
+
+
+  var saveTweet = function(e){
     e.preventDefault();
+    var $mensajeContenedor = $("#tweet");
+    var mensaje = $mensajeContenedor.val();
+    var $botonAgregar = $("#mandar");
+    var hour = formatAMPM();
+
+    $mensajeContenedor.val("");
+    letras = 140 - $("#tweet").val().length;
+    $("#contador").text(letras);
+    $botonAgregar.attr("disabled", true);
+
+    twit.push().set({
+      msg: mensaje,
+      hour: hour
+    });
+  }
+
+  var agregarTweet = function (e) {
     // Obtenemos datos
     var $contenedor = $("#timeline");
     var $mensajeContenedor = $("#tweet");
     var $botonAgregar = $("#mandar");
-    var mensaje = $mensajeContenedor.val();
 
     // Creamos elementos
     var $postContenedor = $("<article />", { "class": "jumbotron" });
     var $postTexto = $("<label />");
     var $hora = $("<p>");
-    $hora.text(formatAMPM);
 
-
+    $hora.text(e.hour);
 
     var identificador = "marcador-" + contador;
 
@@ -31,7 +67,7 @@
     // $postContenedor.addClass("jumbotron");
     // $postCheck.type = "checkbox";
     $postTexto.attr("for", identificador);
-    $postTexto.text(mensaje);
+    $postTexto.text(e.msg);
 
     // Agregarlos al DOM
     $postContenedor.append($postTexto);
@@ -44,13 +80,9 @@
 
 
     // Borrar contenido de textarea
-    $mensajeContenedor.val("");
-    letras = 140 - $("#tweet").val().length;
-    $("#contador").text(letras);
-    $botonAgregar.attr("disabled", true);
+
     // bind, apply, call
 
-    contador++;
   };
 
   var eliminarToDo = function () {
